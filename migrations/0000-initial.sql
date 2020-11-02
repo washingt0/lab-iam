@@ -4,8 +4,6 @@ CREATE DATABASE iam;
 
 \c iam
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 GRANT USAGE ON SCHEMA public TO iam;
 
 CREATE OR REPLACE FUNCTION public.tf_set_updated_at()
@@ -25,7 +23,7 @@ GRANT EXECUTE ON FUNCTION public.tf_set_updated_at TO iam;
 REVOKE ALL ON FUNCTION public.tf_set_updated_at FROM public;
 
 CREATE TABLE public.t_user (
-    id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -50,7 +48,7 @@ GRANT SELECT, UPDATE, DELETE ON TABLE public.t_user TO iam;
 REVOKE ALL ON TABLE public.t_user FROM public;
 
 CREATE TABLE public.t_login_attempt (
-    id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -72,7 +70,7 @@ GRANT SELECT, UPDATE, DELETE ON TABLE public.t_login_attempt TO iam;
 REVOKE ALL ON TABLE public.t_login_attempt FROM public;
 
 CREATE TABLE public.t_session (
-    id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
