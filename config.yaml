@@ -1,0 +1,8 @@
+# sample config file
+
+database:
+    rw_database_uri: postgres://iam:development@localhost:5432/iam?sslmode=disable
+    minimum_migration: '0000'
+    max_conn_lifetime: 60
+    max_open_conn: 5
+    max_idle_conn: 1
