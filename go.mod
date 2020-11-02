@@ -9,10 +9,8 @@ require (
 	github.com/jackc/pgconn v1.7.1
 	github.com/jackc/pgx/v4 v4.9.1
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/washingt0/oops v0.0.1
+	github.com/washingt0/oops v0.0.2
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
 	golang.org/x/text v0.3.4 // indirect
 )
-
-replace github.com/washingt0/oops => ../../oops

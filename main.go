@@ -5,6 +5,7 @@ import (
 	"lab/iam/database"
 	"lab/iam/database/types"
 	"lab/iam/logger"
+	"lab/iam/middleware"
 	"log"
 	"net/http"
 
@@ -19,23 +20,28 @@ func main() {
 		err error
 	)
 
-	if err = database.OpenDatabases(); err != nil {
-		log.Fatal(err)
-	}
-	defer database.Close()
-
 	if err = logger.Setup(); err != nil {
 		log.Fatal(err)
 	}
 	defer logger.Sync()
 
+	if err = database.OpenDatabases(); err != nil {
+		zap.L().Fatal("error while opening connections", zap.Error(err))
+	}
+	defer database.Close()
+
 	if err = httpRouter().Run(config.GetConfig().BindAddress); err != nil {
-		zap.L().Error("error while serving application", zap.Error(err))
+		zap.L().Fatal("error while serving application", zap.Error(err))
 	}
 }
 
 func httpRouter() (r *gin.Engine) {
 	r = gin.New()
+
+	r.Use(
+		middleware.RequestIdentifier(),
+		middleware.RequestLogger(),
+	)
 
 	r.GET("/", func(c *gin.Context) {
 		var (
