@@ -84,7 +84,7 @@ $$
         END;
 
         INSERT INTO public.t_audit(database_user, application_user, origin_ip, schema, "table", operation, query, request_id, old, new)
-        VALUES (CURRENT_USER, _user_id,  inet_client_addr(),  TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_OP, current_query(), _request_id::UUID, _old, _new);
+        VALUES (CURRENT_USER, _user_id,  COALESCE(inet_client_addr(), '127.0.0.1'::INET),  TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_OP, current_query(), _request_id::UUID, _old, _new);
 
         IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
             RETURN NEW;

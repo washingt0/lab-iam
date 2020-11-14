@@ -30,7 +30,14 @@ func RequestLogger() gin.HandlerFunc {
 				zap.String("request_id", c.Value("RID").(string)),
 				zap.String("query_params", c.Request.URL.Query().Encode()),
 			}
+			userID = "undefined"
 		)
+
+		if val, ok := c.Value("UID").(string); ok && val != "" {
+			userID = val
+		}
+
+		fields = append(fields, zap.String("user_id", userID))
 
 		if len(errors) > 0 {
 			zap.L().Error("request handling failed", append(fields, zap.Errors("errors", errors))...)

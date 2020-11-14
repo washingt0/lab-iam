@@ -24,7 +24,13 @@ type Config struct {
 	LogPath         string   `yaml:"log_path" env:"IAM_LOG_PATH" env-default:"/var/log/lab/iam"`
 	LogSTDOUT       bool     `yaml:"log_stdout" env:"IAM_LOG_STDOUT" env-default:"false"`
 	Database        database `yaml:"database"`
+	Secrets         []string `yaml:"secrets" env:"IAM_SECRETS" env-default:"development"`
+	JWT             jwt      `yaml:"jwt"`
 	Version         string
+}
+
+type jwt struct {
+	Issuer string `yaml:"issuer" env:"IAM_JWT_ISSUER" env-default:"lab/iam"`
 }
 
 type database struct {

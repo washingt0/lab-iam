@@ -1,0 +1,32 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:13-alpine
+    networks:
+      - lab_network
+    volumes: 
+      - ./migrations/:/docker-entrypoint-initdb.d/
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  pg_exporter:
+    image: wrouesnel/postgres_exporter
+    networks:
+      - lab_network
+    volumes:
+      - ./exporter_queries.yaml:/etc/exporter.yaml
+    depends_on:
+      - postgres
+    environment:
+      - DATA_SOURCE_NAME=postgres://${METRICS_USER}:${METRICS_PASSWORD}@postgres:5432/postgres?sslmode=disable
+    entrypoint: /postgres_exporter
+                  --extend.query-path /etc/exporter.yaml
+                  --disable-settings-metrics
+
+networks:
+  lab_network:
+    name: lab_network
