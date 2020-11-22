@@ -1,32 +1,48 @@
 version: '3.7'
 
 services:
-  postgres:
+  postgres_iam:
     image: postgres:13-alpine
     networks:
       - lab_network
-    volumes: 
+    volumes:
       - ./migrations/:/docker-entrypoint-initdb.d/
-    ports:
-      - 5432:5432
+      - pg_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - 5432:5432
 
-  pg_exporter:
+  pg_exporter_iam:
     image: wrouesnel/postgres_exporter
     networks:
       - lab_network
     volumes:
       - ./exporter_queries.yaml:/etc/exporter.yaml
     depends_on:
-      - postgres
+      - postgres_iam
     environment:
-      - DATA_SOURCE_NAME=postgres://${METRICS_USER}:${METRICS_PASSWORD}@postgres:5432/postgres?sslmode=disable
+      - DATA_SOURCE_NAME=postgres://${METRICS_USER}:${METRICS_PASSWORD}@postgres_iam:5432/postgres?sslmode=disable
     entrypoint: /postgres_exporter
                   --extend.query-path /etc/exporter.yaml
                   --disable-settings-metrics
 
+  iam:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres_iam
+    networks:
+      - lab_network
+    volumes:
+      - ${IAM_CONFIG_PATH:-./config.yaml}:/go/config.yaml
+      - ${IAM_LOG_PATH:-/var/log/lab/iam}:/var/log/lab/iam
+
 networks:
   lab_network:
     name: lab_network
+
+volumes:
+  pg_data:

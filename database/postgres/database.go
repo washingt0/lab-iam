@@ -53,7 +53,7 @@ func (p *pg) Open(connStr, appName, minMigration string, maxLifeTime, maxOpenCon
 		ctx,
 		poolCfg,
 	); err != nil {
-		oops.ThrowError("unable to connect with database server", err)
+		return oops.ThrowError("unable to connect with database server", err)
 	}
 
 	var validMigration bool

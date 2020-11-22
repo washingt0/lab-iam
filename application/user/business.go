@@ -37,6 +37,10 @@ func Create(ctx context.Context, u *User) (id *string, err error) {
 		return
 	}
 
+	if err = tx.Commit(); err != nil {
+		return
+	}
+
 	return
 }
 

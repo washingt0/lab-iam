@@ -29,13 +29,13 @@ func (r *repository) Create(u *user.User) (id *string, err error) {
 	}
 
 	if _, err = r.tx.Exec(`
-		INSERT INTO t_outgoing_messages(queue, payload)
-		SELECT '', jsonb_buid_object(
+		INSERT INTO t_outgoing_message(queue, payload)
+		SELECT 'USER_CREATED', jsonb_build_object(
 			'id', id,
 			'name', name,
 			'username', username,
 			'active', active
-		)
+		)::JSONB
 		FROM t_user
 		WHERE id = $1
 	`, id); err != nil {

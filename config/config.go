@@ -1,10 +1,13 @@
 package config
 
 import (
+	"crypto/rsa"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -17,20 +20,27 @@ var (
 
 // Config represents all application settings
 type Config struct {
-	ApplicationName string   `yaml:"application_name" env:"IAM_APPLICATION_NAME" env-default:"lab/iam"`
-	BindAddress     string   `yaml:"bind_address" env:"IAM_BIND_ADDRESS" env-default:":9000"`
-	Production      bool     `yaml:"production" env:"IAM_PRODUCTION" env-default:"false"`
-	LogLevel        int      `yaml:"log_level" env:"IAM_LOG_LEVEL" env-default:"0"`
-	LogPath         string   `yaml:"log_path" env:"IAM_LOG_PATH" env-default:"/var/log/lab/iam"`
-	LogSTDOUT       bool     `yaml:"log_stdout" env:"IAM_LOG_STDOUT" env-default:"false"`
-	Database        database `yaml:"database"`
-	Secrets         []string `yaml:"secrets" env:"IAM_SECRETS" env-default:"development"`
-	JWT             jwt      `yaml:"jwt"`
+	ApplicationName string    `yaml:"application_name" env:"IAM_APPLICATION_NAME" env-default:"lab/iam"`
+	BindAddress     string    `yaml:"bind_address" env:"IAM_BIND_ADDRESS" env-default:":9000"`
+	Production      bool      `yaml:"production" env:"IAM_PRODUCTION" env-default:"false"`
+	LogLevel        int       `yaml:"log_level" env:"IAM_LOG_LEVEL" env-default:"0"`
+	LogPath         string    `yaml:"log_path" env:"IAM_LOG_PATH" env-default:"/var/log/lab/iam"`
+	LogSTDOUT       bool      `yaml:"log_stdout" env:"IAM_LOG_STDOUT" env-default:"false"`
+	Database        database  `yaml:"database"`
+	JWT             jwtConfig `yaml:"jwt"`
 	Version         string
+	PublicKeys      map[string]*rsa.PublicKey
 }
 
-type jwt struct {
+type jwtConfig struct {
 	Issuer string `yaml:"issuer" env:"IAM_JWT_ISSUER" env-default:"lab/iam"`
+	Keys   []struct {
+		ID          string `yaml:"id"`
+		PublicPath  string `yaml:"public"`
+		PrivatePath string `yaml:"private"`
+		PublicKey   *rsa.PublicKey
+		PrivateKey  *rsa.PrivateKey
+	} `yaml:"keys"`
 }
 
 type database struct {
@@ -72,6 +82,32 @@ func init() {
 
 	if cfg.Production {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	cfg.PublicKeys = make(map[string]*rsa.PublicKey)
+
+	for i := range cfg.JWT.Keys {
+		var (
+			tmp []byte
+		)
+
+		if tmp, err = ioutil.ReadFile(cfg.JWT.Keys[i].PublicPath); err != nil {
+			log.Fatal(err)
+		}
+
+		if cfg.JWT.Keys[i].PublicKey, err = jwt.ParseRSAPublicKeyFromPEM(tmp); err != nil {
+			log.Fatal(err)
+		}
+
+		cfg.PublicKeys[cfg.JWT.Keys[i].ID] = cfg.JWT.Keys[i].PublicKey
+
+		if tmp, err = ioutil.ReadFile(cfg.JWT.Keys[i].PrivatePath); err != nil {
+			log.Fatal(err)
+		}
+
+		if cfg.JWT.Keys[i].PrivateKey, err = jwt.ParseRSAPrivateKeyFromPEM(tmp); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	cfg.Version = Version

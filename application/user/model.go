@@ -4,5 +4,5 @@ package user
 type User struct {
 	Name     *string `json:"name" binding:"required,gt=4,lt=100"`
 	Username *string `json:"username" binding:"required,gt=4,lt=64"`
-	Password *string `json:"password" binding:"required,gt=8,lt=128"`
+	Password *string `json:"password" binding:"required,gte=8,lt=128"`
 }

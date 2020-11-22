@@ -20,7 +20,10 @@ func login(c *gin.Context) {
 	var (
 		loginReq auth.Login
 		err      error
+		token    *string
 	)
+
+	c.Set("UID", "public")
 
 	if err = c.ShouldBindJSON(&loginReq); err != nil {
 		oops.GinHandleError(c, err, http.StatusBadRequest)
@@ -28,13 +31,23 @@ func login(c *gin.Context) {
 	}
 
 	loginReq.UserAgent = utils.GetStringPointer(c.GetHeader("User-Agent"))
+	loginReq.IPAddress = utils.GetStringPointer(c.ClientIP())
 
-	if err = auth.TryLogin(c.Copy(), &loginReq); err != nil {
+	if loginReq.IPAddress == nil {
+		loginReq.IPAddress = utils.GetStringPointer("0.0.0.0")
+	}
+
+	loginReq.IPLocation = utils.GetStringPointer("unknown")
+
+	if token, err = auth.TryLogin(c.Copy(), &loginReq); err != nil {
 		oops.GinHandleError(c, err, http.StatusBadRequest)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{})
+	c.JSON(http.StatusCreated, gin.H{
+		"token": token,
+		"kind":  "Bearer",
+	})
 }
 
 func logout(c *gin.Context) {}

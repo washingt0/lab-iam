@@ -187,40 +187,16 @@ GRANT SELECT, UPDATE, INSERT ON TABLE public.t_user TO iam;
 
 REVOKE ALL ON TABLE public.t_user FROM public;
 
-CREATE TABLE public.t_login_attempt (
-    id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP,
-    deleted_at TIMESTAMP,
-    donet_at TIMESTAMP,
-    user_agent TEXT NOT NULL CHECK(char_length(user_agent) < 256),
-    successful BOOLEAN NOT NULL DEFAULT FALSE,
-    error TEXT CHECK (char_length(error) < 256)
-);
-
-CREATE TRIGGER add_audit
-BEFORE UPDATE OR DELETE OR INSERT ON public.t_login_attempt
-FOR EACH ROW
-EXECUTE PROCEDURE public.tf_add_audit();
-
-CREATE TRIGGER set_updated_at
-BEFORE UPDATE ON public.t_login_attempt
-FOR EACH ROW WHEN (OLD.* IS DISTINCT FROM  NEW.*)
-EXECUTE PROCEDURE public.tf_set_updated_at();
-
-ALTER TABLE public.t_login_attempt OWNER TO lab;
-
-GRANT SELECT, UPDATE, INSERT ON TABLE public.t_login_attempt TO iam;
-
-REVOKE ALL ON TABLE public.t_login_attempt FROM public;
-
 CREATE TABLE public.t_session (
     id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
-    expires_at TIMESTAMP,
-    login_attempt_id UUID NOT NULL REFERENCES t_login_attempt(id)
+    expires_at TIMESTAMP NOT NULL DEFAULT NOW() + '90 days'::INTERVAL,
+    user_id UUID NOT NULL REFERENCES public.t_user(id),
+    user_agent TEXT NOT NULL CHECK(char_length(user_agent) BETWEEN 5 AND 256),
+    login_ip INET NOT NULL,
+    login_location TEXT CHECK(char_length(login_location) BETWEEN 2 AND 128)
 );
 
 CREATE TRIGGER add_audit
@@ -241,4 +217,6 @@ REVOKE ALL ON TABLE public.t_session FROM public;
 
 SET application.user_id TO 'migration';
 
+-- plain password: admin123
+INSERT INTO public.t_user(name, username, password) VALUES ('admin', 'admin', '$2a$10$lYazTR27nzKt5Z5HIX.lz.RNKk5t1U6PciMJS/Ig72odgh0WsBk3m');
 INSERT INTO public.t_migration (name) VALUES ('0000');

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crypto/rsa"
 	"lab/iam/config"
 	"net/http"
 
@@ -17,7 +18,7 @@ type Session struct {
 
 // ValidateJWT check if the request contains a valid JWT token
 func ValidateJWT() gin.HandlerFunc {
-	secrets := config.GetConfig().Secrets
+	keys := config.GetConfig().PublicKeys
 	return func(c *gin.Context) {
 		var (
 			sess  *Session
@@ -30,7 +31,7 @@ func ValidateJWT() gin.HandlerFunc {
 			return
 		}
 
-		if sess, err = decodeJWT(token[7:], secrets); err != nil {
+		if sess, err = decodeJWT(token[7:], keys); err != nil {
 			oops.GinHandleError(c, err, http.StatusUnauthorized)
 			return
 		}
@@ -42,13 +43,13 @@ func ValidateJWT() gin.HandlerFunc {
 	}
 }
 
-func decodeJWT(token string, secrets []string) (sess *Session, err error) {
-	if len(secrets) == 0 {
-		return nil, oops.ThrowError("no secret was supplied", err)
+func decodeJWT(token string, keys map[string]*rsa.PublicKey) (sess *Session, err error) {
+	if len(keys) == 0 {
+		return nil, oops.ThrowError("no RSA keys was supplied", err)
 	}
 
-	for i := range secrets {
-		if sess, err = tryDecodeJWT(token, secrets[i]); err == nil {
+	for i := range keys {
+		if sess, err = tryDecodeJWT(token, keys[i]); err == nil {
 			break
 		}
 	}
@@ -60,18 +61,18 @@ func decodeJWT(token string, secrets []string) (sess *Session, err error) {
 	return
 }
 
-func tryDecodeJWT(token string, secret string) (sess *Session, err error) {
+func tryDecodeJWT(token string, key *rsa.PublicKey) (sess *Session, err error) {
 	var (
 		decoded *jwt.Token
 	)
 	sess = new(Session)
 
 	if decoded, err = jwt.ParseWithClaims(token, sess, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, oops.ThrowError("unexpected signing method: "+token.Header["alg"].(string), nil)
 		}
 
-		return []byte(secret), nil
+		return key, nil
 	}); err != nil {
 		return nil, err
 	}
