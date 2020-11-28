@@ -39,6 +39,8 @@ services:
     volumes:
       - ${IAM_CONFIG_PATH:-./config.yaml}:/go/config.yaml
       - ${IAM_LOG_PATH:-/var/log/lab/iam}:/var/log/lab/iam
+      - ${IAM_PRIVATE_KEY:-./private.pem}:/private/private.pem
+      - ${IAM_PUBLIC_KEY:-./public.pem}:/private/public.pem
 
 networks:
   lab_network:

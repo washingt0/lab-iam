@@ -52,4 +52,16 @@ func login(c *gin.Context) {
 
 func logout(c *gin.Context) {}
 
-func session(c *gin.Context) {}
+func session(c *gin.Context) {
+	var (
+		sess *middleware.Session
+		ok   bool
+	)
+
+	if sess, ok = c.Value("USession").(*middleware.Session); !ok {
+		oops.GinHandleError(c, oops.ThrowError("Invalid Session", nil), http.StatusForbidden)
+		return
+	}
+
+	c.JSON(http.StatusOK, sess)
+}

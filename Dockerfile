@@ -25,8 +25,8 @@ WORKDIR /go/
 
 RUN mkdir -p /var/log/lab/iam
 
-RUN chown dashboard /var/log/lab/iam -R
-RUN chown dashboard /go/iam
+RUN chown iam /var/log/lab/iam -R
+RUN chown iam /go/iam
 RUN ln -sf /usr/share/zoneinfo/America/Fortaleza /etc/localtime
 
 USER iam

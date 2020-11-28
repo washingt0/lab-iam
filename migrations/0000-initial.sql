@@ -137,6 +137,7 @@ CREATE TABLE public.t_outgoing_message (
     deleted_at TIMESTAMP,
     sent_at TIMESTAMP,
     error TEXT,
+    event TEXT NOT NULL,
     queue TEXT NOT NULL,
     payload JSONB NOT NULL
 );

@@ -11,5 +11,5 @@ jwt:
     issuer: lab/iam
     keys:
         - id: development
-          private: "private.pem"
-          public: "public.pem"
+          private: "/private/private.pem"
+          public: "/private/public.pem"

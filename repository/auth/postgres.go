@@ -54,8 +54,8 @@ func (r *repository) CreateSession(username, userAgent, loginIP, loginLocation *
 	}
 
 	if err = r.tx.QueryRow(`
-		INSERT INTO public.t_outgoing_message(queue, payload)
-		VALUES ('SESSION_CREATED', jsonb_build_object(
+		INSERT INTO public.t_outgoing_message(event, queue, payload)
+		VALUES ('SESSION_CREATED', 'SESSION', jsonb_build_object(
 			'session_id', $1::UUID,
 			'created_at', $2::TIMESTAMP,
 			'expires_at', $3::TIMESTAMP,
@@ -81,8 +81,8 @@ func (r *repository) DropSession(sessionID *string) (err error) {
 	}
 
 	if _, err = r.tx.Exec(`
-		INSERT INTO public.t_outgoing_message(queue, payload)
-		VALUES ('SESSION_REVOKED', jsonb_build_object(
+		INSERT INTO public.t_outgoing_message(event, queue, payload)
+		VALUES ('SESSION_REVOKED', 'SESSION', jsonb_build_object(
 			'session_id', $1::UUID,
 		))
 	`, sessionID); err != nil {
