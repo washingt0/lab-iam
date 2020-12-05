@@ -2,8 +2,6 @@ package config
 
 import (
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"os"
@@ -112,10 +110,6 @@ func init() {
 		if cfg.JWT.Keys[i].PrivateKey, err = jwt.ParseRSAPrivateKeyFromPEM(tmp); err != nil {
 			log.Fatal(err)
 		}
-
-		cfg.JWT.Keys[i].PublicB64 = base64.
-			StdEncoding.
-			EncodeToString(x509.MarshalPKCS1PublicKey(cfg.JWT.Keys[i].PublicKey))
 	}
 
 	cfg.Version = Version
