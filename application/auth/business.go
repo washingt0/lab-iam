@@ -67,6 +67,7 @@ func generateJWT(out *session) (token *string, err error) {
 
 	out.ExpiresAt = out.SessionExpiresAt.Unix()
 	out.Issuer = config.GetConfig().JWT.Issuer
+	out.Audience = config.GetConfig().JWT.Audience
 	out.NotBefore = time.Now().Unix()
 	out.Subject = *out.UserID
 

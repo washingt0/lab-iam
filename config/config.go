@@ -2,6 +2,8 @@ package config
 
 import (
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"os"
@@ -33,13 +35,15 @@ type Config struct {
 }
 
 type jwtConfig struct {
-	Issuer string `yaml:"issuer" env:"IAM_JWT_ISSUER" env-default:"lab/iam"`
-	Keys   []struct {
+	Issuer   string `yaml:"issuer" env:"IAM_JWT_ISSUER" env-default:"lab/iam"`
+	Audience string `yaml:"audience" env:"IAM_JWT_AUDIENCE"`
+	Keys     []struct {
 		ID          string `yaml:"id"`
 		PublicPath  string `yaml:"public"`
 		PrivatePath string `yaml:"private"`
 		PublicKey   *rsa.PublicKey
 		PrivateKey  *rsa.PrivateKey
+		PublicB64   string
 	} `yaml:"keys"`
 }
 
@@ -108,6 +112,10 @@ func init() {
 		if cfg.JWT.Keys[i].PrivateKey, err = jwt.ParseRSAPrivateKeyFromPEM(tmp); err != nil {
 			log.Fatal(err)
 		}
+
+		cfg.JWT.Keys[i].PublicB64 = base64.
+			StdEncoding.
+			EncodeToString(x509.MarshalPKCS1PublicKey(cfg.JWT.Keys[i].PublicKey))
 	}
 
 	cfg.Version = Version

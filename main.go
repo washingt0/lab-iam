@@ -8,6 +8,7 @@ import (
 	"lab/iam/logger"
 	"lab/iam/middleware"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -40,6 +41,9 @@ func httpRouter() (r *gin.Engine) {
 		middleware.RequestIdentifier(),
 		middleware.RequestLogger(),
 	)
+
+	r.GET("/keys", listKeys)
+
 	v1 := r.Group("v1")
 
 	auth.Router(v1.Group("auth"))
@@ -49,4 +53,24 @@ func httpRouter() (r *gin.Engine) {
 	user.Router(v1.Group("user"))
 
 	return
+}
+
+func listKeys(c *gin.Context) {
+	var (
+		keys = config.GetConfig().JWT.Keys
+		out  = make([]map[string]interface{}, 0, len(keys))
+	)
+
+	for i := range keys {
+		out = append(out, map[string]interface{}{
+			"kty": "oct",
+			"k":   keys[i].PublicB64,
+			"alg": "RS256",
+			"kid": keys[i].ID,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"keys": out,
+	})
 }
