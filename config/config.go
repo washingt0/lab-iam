@@ -41,7 +41,6 @@ type jwtConfig struct {
 		PrivatePath string `yaml:"private"`
 		PublicKey   *rsa.PublicKey
 		PrivateKey  *rsa.PrivateKey
-		PublicB64   string
 	} `yaml:"keys"`
 }
 

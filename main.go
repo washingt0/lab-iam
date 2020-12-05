@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"lab/iam/config"
 	"lab/iam/database"
 	"lab/iam/handler/auth"
@@ -10,10 +9,10 @@ import (
 	"lab/iam/middleware"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"gopkg.in/square/go-jose.v2"
 )
 
 func main() {
@@ -60,17 +59,15 @@ func httpRouter() (r *gin.Engine) {
 func listKeys(c *gin.Context) {
 	var (
 		keys = config.GetConfig().JWT.Keys
-		out  = make([]map[string]interface{}, 0, len(keys))
+		out  = make([]jose.JSONWebKey, 0, len(keys))
 	)
 
 	for i := range keys {
-		out = append(out, map[string]interface{}{
-			"kty": "RSA",
-			"k":   keys[i].PublicB64,
-			"alg": "RS256",
-			"kid": keys[i].ID,
-			"n":   base64.StdEncoding.EncodeToString(keys[i].PublicKey.N.Bytes()),
-			"e":   base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(keys[i].PublicKey.E))),
+		out = append(out, jose.JSONWebKey{
+			Key:       keys[i].PublicKey,
+			KeyID:     keys[i].ID,
+			Algorithm: "RS256",
+			Use:       "sig",
 		})
 	}
 
