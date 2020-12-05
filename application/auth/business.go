@@ -75,8 +75,11 @@ func generateJWT(out *session) (token *string, err error) {
 		return nil, oops.ThrowError("Unable to define key", err)
 	}
 
+	tk := jwt.NewWithClaims(jwt.SigningMethodRS256, out)
+	tk.Header["kid"] = config.GetConfig().JWT.Keys[idx.Int64()].ID
+
 	token = new(string)
-	if *token, err = jwt.NewWithClaims(jwt.SigningMethodRS256, out).
+	if *token, err = tk.
 		SignedString(config.GetConfig().JWT.Keys[idx.Int64()].PrivateKey); err != nil {
 		return nil, oops.ThrowError("Was not possible to generate JWT", err)
 	}
