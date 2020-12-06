@@ -16,10 +16,10 @@ type Login struct {
 }
 
 type session struct {
-	SessionID        *string    `json:"session_id"`
-	CreatedAt        *time.Time `json:"created_at"`
-	SessionExpiresAt *time.Time `json:"expires_at"`
-	UserID           *string    `json:"user_id"`
+	SessionID        *string    `json:"-"`
+	CreatedAt        *time.Time `json:"-"`
+	SessionExpiresAt *time.Time `json:"-"`
+	UserID           *string    `json:"-"`
 	Name             *string    `json:"user_name"`
 	Username         *string    `json:"username"`
 	jwt.Claims

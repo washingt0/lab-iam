@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"lab/iam/config"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/washingt0/oops"
@@ -15,12 +14,8 @@ import (
 
 // Session represents a session rebuilt from a JWT
 type Session struct {
-	ID               *string    `json:"session_id"`
-	CreatedAt        *time.Time `json:"created_at"`
-	SessionExpiresAt *time.Time `json:"expires_at"`
-	UserID           *string    `json:"user_id"`
-	Name             *string    `json:"user_name"`
-	Username         *string    `json:"username"`
+	Name     *string `json:"user_name"`
+	Username *string `json:"username"`
 	jwt.Claims
 }
 
