@@ -2,12 +2,13 @@ package config
 
 import (
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"io/ioutil"
 	"log"
 	"os"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -27,17 +28,17 @@ type Config struct {
 	LogPath         string    `yaml:"log_path" env:"IAM_LOG_PATH" env-default:"/var/log/lab/iam"`
 	LogSTDOUT       bool      `yaml:"log_stdout" env:"IAM_LOG_STDOUT" env-default:"false"`
 	Database        database  `yaml:"database"`
-	JWT             jwtConfig `yaml:"jwt"`
+	JWT             JWTConfig `yaml:"jwt"`
 	Version         string
 	PublicKeys      map[string]*rsa.PublicKey
 }
 
-type jwtConfig struct {
+// JWTConfig holds all JWT-related settings
+type JWTConfig struct {
 	Issuer   string `yaml:"issuer" env:"IAM_JWT_ISSUER" env-default:"lab/iam"`
 	Audience string `yaml:"audience" env:"IAM_JWT_AUDIENCE"`
 	Keys     []struct {
 		ID          string `yaml:"id"`
-		PublicPath  string `yaml:"public"`
 		PrivatePath string `yaml:"private"`
 		PublicKey   *rsa.PublicKey
 		PrivateKey  *rsa.PrivateKey
@@ -89,26 +90,27 @@ func init() {
 
 	for i := range cfg.JWT.Keys {
 		var (
-			tmp []byte
+			rawKey []byte
+			block  *pem.Block
 		)
 
-		if tmp, err = ioutil.ReadFile(cfg.JWT.Keys[i].PublicPath); err != nil {
+		if rawKey, err = ioutil.ReadFile(cfg.JWT.Keys[i].PrivatePath); err != nil {
 			log.Fatal(err)
 		}
 
-		if cfg.JWT.Keys[i].PublicKey, err = jwt.ParseRSAPublicKeyFromPEM(tmp); err != nil {
+		block, _ = pem.Decode(rawKey)
+
+		if block.Type != "RSA PRIVATE KEY" {
+			log.Fatal("Invalid private key type")
+		}
+
+		if cfg.JWT.Keys[i].PrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 			log.Fatal(err)
 		}
+
+		cfg.JWT.Keys[i].PublicKey = &cfg.JWT.Keys[i].PrivateKey.PublicKey
 
 		cfg.PublicKeys[cfg.JWT.Keys[i].ID] = cfg.JWT.Keys[i].PublicKey
-
-		if tmp, err = ioutil.ReadFile(cfg.JWT.Keys[i].PrivatePath); err != nil {
-			log.Fatal(err)
-		}
-
-		if cfg.JWT.Keys[i].PrivateKey, err = jwt.ParseRSAPrivateKeyFromPEM(tmp); err != nil {
-			log.Fatal(err)
-		}
 	}
 
 	cfg.Version = Version

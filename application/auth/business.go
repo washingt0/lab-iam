@@ -11,11 +11,13 @@ import (
 	"math/big"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/washingt0/oops"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/square/go-jose.v2"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
+// TryLogin tries to perform login with the given credentials
 func TryLogin(ctx context.Context, req *Login) (token *string, err error) {
 	var (
 		tx             types.Transaction
@@ -43,7 +45,7 @@ func TryLogin(ctx context.Context, req *Login) (token *string, err error) {
 	}
 
 	if token, err = generateJWT(&session{
-		ID:               sess.ID,
+		SessionID:        sess.ID,
 		CreatedAt:        sess.CreatedAt,
 		SessionExpiresAt: sess.ExpiresAt,
 		UserID:           sess.UserID,
@@ -63,24 +65,34 @@ func TryLogin(ctx context.Context, req *Login) (token *string, err error) {
 func generateJWT(out *session) (token *string, err error) {
 	var (
 		idx *big.Int
+		sig jose.Signer
 	)
-
-	out.ExpiresAt = out.SessionExpiresAt.Unix()
-	out.Issuer = config.GetConfig().JWT.Issuer
-	out.Audience = config.GetConfig().JWT.Audience
-	out.NotBefore = time.Now().Unix()
-	out.Subject = *out.UserID
-
 	if idx, err = rand.Int(rand.Reader, big.NewInt(int64(len(config.GetConfig().JWT.Keys)))); err != nil {
 		return nil, oops.ThrowError("Unable to define key", err)
 	}
 
-	tk := jwt.NewWithClaims(jwt.SigningMethodRS256, out)
-	tk.Header["kid"] = config.GetConfig().JWT.Keys[idx.Int64()].ID
+	if sig, err = jose.NewSigner(
+		jose.SigningKey{
+			Algorithm: jose.RS256,
+			Key:       config.GetConfig().JWT.Keys[idx.Int64()].PrivateKey,
+		}, (&jose.SignerOptions{
+			ExtraHeaders: map[jose.HeaderKey]interface{}{
+				"kid": config.GetConfig().JWT.Keys[idx.Int64()].ID,
+			},
+		}).WithType("JWT")); err != nil {
+		return nil, oops.ThrowError("Unable to prepare token signer", err)
+	}
+
+	out.Subject = *out.UserID
+	out.Issuer = config.GetConfig().JWT.Issuer
+	out.NotBefore = jwt.NewNumericDate(time.Now())
+	out.IssuedAt = jwt.NewNumericDate(time.Now())
+	out.Audience = jwt.Audience{config.GetConfig().JWT.Audience}
+	out.Expiry = jwt.NewNumericDate(*out.SessionExpiresAt)
+	out.ID = *out.SessionID
 
 	token = new(string)
-	if *token, err = tk.
-		SignedString(config.GetConfig().JWT.Keys[idx.Int64()].PrivateKey); err != nil {
+	if *token, err = jwt.Signed(sig).Claims(out).CompactSerialize(); err != nil {
 		return nil, oops.ThrowError("Was not possible to generate JWT", err)
 	}
 
